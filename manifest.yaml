@@ -1,0 +1,58 @@
+# Hermes Agent MCP Catalog Entry
+# Presence in hermes-agent/optional-mcps/ = Nous-approved.
+# Merged via PR review.
+manifest_version: 1
+
+name: ticktick
+description: Manage TickTick tasks, projects, and Kanban columns from Hermes.
+source: https://github.com/walice/ticktick-mcp-hermes
+
+transport:
+  type: stdio
+  command: "${INSTALL_DIR}/.venv/bin/python"
+  args:
+    - "${INSTALL_DIR}/ticktick_mcp.py"
+
+install:
+  type: git
+  url: https://github.com/walice/ticktick-mcp-hermes.git
+  ref: main
+  bootstrap:
+    - "python3 -m venv .venv"
+    - ".venv/bin/pip install -r requirements.txt"
+
+auth:
+  type: api_key
+  env:
+    - name: TICKTICK_CLIENT_ID
+      prompt: "TickTick OAuth client ID (from developer.ticktick.com)"
+      required: true
+      secret: false
+    - name: TICKTICK_CLIENT_SECRET
+      prompt: "TickTick OAuth client secret"
+      required: true
+      secret: true
+    - name: TICKTICK_REDIRECT_URI
+      prompt: "OAuth redirect URI"
+      default: "http://localhost:3333/callback"
+      required: false
+      secret: false
+
+tools:
+  default_enabled:
+    - ticktick_list_projects
+    - ticktick_list_tasks
+    - ticktick_list_tasks_by_column
+    - ticktick_create_task
+    - ticktick_get_task
+    - ticktick_filter_tasks
+
+post_install: |
+  After installation, run the OAuth setup to obtain your initial tokens:
+
+    python ticktick_mcp.py --oauth
+
+  This will open a browser flow to authorize the TickTick app.
+  Tokens are stored at ~/.ticktick-mcp/tokens.json and refreshed automatically.
+
+  Start a new Hermes session to load the TickTick tools.
