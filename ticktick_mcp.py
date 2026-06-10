@@ -418,7 +418,7 @@ async def update_task(
     task_id: str,
     title: str = "",
     content: str = "",
-    priority: int = 0,
+    priority: int = -1,
     due_date: str = "",
     tags: str = "",
 ) -> str:
@@ -429,7 +429,8 @@ async def update_task(
         task_id: The task ID to update
         title: New title
         content: New description
-        priority: Priority level (0=none, 1=high, 2=medium, 3=low, 5=no priority)
+        priority: Priority level (-1=leave unchanged, 0=none, 1=high,
+            2=medium, 3=low, 5=no priority)
         due_date: Due date ISO format
         tags: Comma-separated list of tags
     """
@@ -448,7 +449,7 @@ async def update_task(
             payload["title"] = title
         if content:
             payload["content"] = content
-        if priority != 0:
+        if priority >= 0:
             payload["priority"] = priority
         if due_date:
             payload["dueDate"] = due_date
