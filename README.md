@@ -4,6 +4,15 @@ MCP (Model Context Protocol) server that gives Hermes Agent access to your
 TickTick tasks, projects, and Kanban board columns. Uses the official
 TickTick Open API with OAuth2 authentication and automatic token refresh.
 
+## Features
+
+- List projects, tasks (flat or grouped by Kanban column), and filter by status
+- Create, update, complete, and delete tasks
+- Full task detail view including checklists, tags, priorities, and due dates
+- Due date, tag, and priority emoji display in all task views
+- OAuth2 with automatic token refresh -- set it up once
+- Task ID truncation in list views for privacy-safe screenshots
+
 ## Prerequisites
 
 - Python 3.9 or later
@@ -46,6 +55,13 @@ Create `~/.ticktick-mcp/credentials.json`:
 }
 ```
 
+You can override the default paths with these environment variables:
+
+| Variable | Default |
+|----------|---------|
+| `TICKTICK_CREDENTIALS_PATH` | `~/.ticktick-mcp/credentials.json` |
+| `TICKTICK_TOKENS_PATH` | `~/.ticktick-mcp/tokens.json` |
+
 ## OAuth Setup
 
 Run the OAuth flow once to obtain your initial tokens:
@@ -60,7 +76,8 @@ This will:
 3. You will be redirected -- copy the full redirect URL
 4. Paste it into the terminal
 
-Tokens are saved to `~/.ticktick-mcp/tokens.json` and refreshed automatically.
+Tokens are saved to `~/.ticktick-mcp/tokens.json` (chmod 600) and refreshed
+automatically.
 
 ## Usage with Hermes Agent
 
@@ -76,7 +93,8 @@ mcp_servers:
       - "/path/to/ticktick_mcp.py"
 ```
 
-Then restart Hermes. The tools will be auto-discovered.
+Then restart Hermes Agent. The tools will be auto-discovered and registered
+as `mcp_ticktick_*`.
 
 ### Catalog install (once accepted into Hermes catalog)
 
@@ -89,25 +107,44 @@ hermes mcp catalog
 
 | Tool | Description |
 |------|-------------|
-| `ticktick_list_projects` | List all projects and lists |
-| `ticktick_list_tasks` | List tasks in a project (flat view) |
-| `ticktick_list_tasks_by_column` | List tasks grouped by Kanban column |
-| `ticktick_create_task` | Create a task with title, content, priority, due date, tags |
+| `ticktick_list_projects` | List all projects and lists with IDs |
+| `ticktick_list_tasks` | List tasks in a project (flat view, with due dates and tags) |
+| `ticktick_list_tasks_by_column` | List tasks grouped by Kanban column/section |
+| `ticktick_create_task` | Create a task with title, content, priority, due date, tags, checklist |
 | `ticktick_update_task` | Update an existing task's fields |
 | `ticktick_complete_task` | Mark a task as complete |
 | `ticktick_delete_task` | Delete a task |
-| `ticktick_get_task` | Get full details of a single task |
+| `ticktick_get_task` | Get full details of a single task (checklists, tags, content) |
 | `ticktick_filter_tasks` | Filter tasks by status (incomplete/completed/all) |
 
-## Environment Variables
+### Priority values
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `TICKTICK_CLIENT_ID` | Yes | -- | OAuth client ID |
-| `TICKTICK_CLIENT_SECRET` | Yes | -- | OAuth client secret |
-| `TICKTICK_REDIRECT_URI` | No | `http://localhost:3333/callback` | OAuth redirect URI |
-| `TICKTICK_CREDENTIALS_PATH` | No | `~/.ticktick-mcp/credentials.json` | Path to credentials file |
-| `TICKTICK_TOKENS_PATH` | No | `~/.ticktick-mcp/tokens.json` | Path to tokens file |
+| Value | Meaning | Emoji |
+|-------|---------|-------|
+| 0 | None (default) | (none) |
+| 1 | High | red circle |
+| 2 | Medium | orange circle |
+| 3 | Low | blue circle |
+| 5 | No priority | white circle |
+
+### Task display format
+
+Task lists show: status icon, priority emoji, title, due date (if set),
+tags (if any), and a truncated task ID for privacy.
+
+## API Coverage
+
+Uses the TickTick Open API v1 for most operations and v2 for batch delete.
+Endpoints:
+
+| Operation | Method | Endpoint |
+|-----------|--------|----------|
+| List projects | GET | `/open/v1/project` |
+| Get project data | GET | `/open/v1/project/{id}/data` |
+| Create task | POST | `/open/v1/task` |
+| Update task | POST | `/open/v1/task/{id}` |
+| Complete task | POST | `/open/v1/project/{pid}/task/{id}/complete` |
+| Delete task | POST | `/api/v2/batch/task` |
 
 ## Contributing
 
