@@ -503,10 +503,14 @@ async def get_task(project_id: str, task_id: str) -> str:
 
         CHECK = "\u2713"
         CROSS = "\u25CB"
+        if task.get("status") == 1:
+            status_str = f"{CHECK} Completed"
+        else:
+            status_str = f"{CROSS} Active"
         lines = [
             f"Title: {task.get('title', 'Untitled')}",
             f"ID: {task.get('id', '?')}",
-            f"Status: {CHECK if task.get('status') == 1 else CROSS} Active",
+            f"Status: {status_str}",
         ]
         if task.get("content"):
             lines.append(f"Content: {task['content']}")
