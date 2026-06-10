@@ -123,6 +123,8 @@ async def refresh_access_token(refresh_token):
                 f"Token refresh failed ({resp.status_code}): {resp.text}"
             )
         new_tokens = resp.json()
+        new_tokens["expires_at"] = time.time() + new_tokens.get("expires_in", 3600)
+        new_tokens.setdefault("refresh_token", refresh_token)
         save_tokens(new_tokens)
         return new_tokens
 
@@ -133,7 +135,13 @@ async def get_valid_token():
         raise RuntimeError("No OAuth tokens found. Run with --oauth first.")
     expires_at = tokens.get("expires_at", 0)
     if time.time() >= expires_at - 60:
-        tokens = await refresh_access_token(tokens["refresh_token"])
+        refresh_token = tokens.get("refresh_token")
+        if not refresh_token:
+            raise RuntimeError(
+                "Access token expired and no refresh token is available "
+                "(TickTick does not always issue one). Re-run with --oauth."
+            )
+        tokens = await refresh_access_token(refresh_token)
     return tokens["access_token"]
 
 
