@@ -10,7 +10,7 @@ TickTick Open API with OAuth2 authentication and automatic token refresh.
 - Create, update, complete, and delete tasks
 - Full task detail view including checklists, tags, priorities, and due dates
 - Due date, tag, and priority emoji display in all task views
-- OAuth2 with automatic token refresh -- set it up once
+- OAuth2 with automatic token refresh when TickTick issues a refresh token
 - Task ID truncation in list views for privacy-safe screenshots
 
 ## Prerequisites
@@ -77,7 +77,11 @@ This will:
 4. Paste it into the terminal
 
 Tokens are saved to `~/.ticktick-mcp/tokens.json` (chmod 600) and refreshed
-automatically.
+automatically when a refresh token is present.
+
+Note: TickTick does not always return a refresh token. In that case the
+access token is long-lived (about 180 days) and the server will tell you to
+re-run `python ticktick_mcp.py --oauth` when it expires.
 
 ## Usage with Hermes Agent
 
@@ -111,7 +115,7 @@ hermes mcp catalog
 | `ticktick_list_tasks` | List tasks in a project (flat view, with due dates and tags) |
 | `ticktick_list_tasks_by_column` | List tasks grouped by Kanban column/section |
 | `ticktick_create_task` | Create a task with title, content, priority, due date, tags, checklist |
-| `ticktick_update_task` | Update an existing task's fields |
+| `ticktick_update_task` | Update an existing task's fields (priority -1 = leave unchanged) |
 | `ticktick_complete_task` | Mark a task as complete |
 | `ticktick_delete_task` | Delete a task |
 | `ticktick_get_task` | Get full details of a single task (checklists, tags, content) |
