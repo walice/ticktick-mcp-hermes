@@ -191,6 +191,21 @@ async def _do_v2(method, path, data=None):
         return resp.json() if resp.text else {}
 
 
+# -- Helpers ---------------------------------------------------------------
+
+
+def _fmt_due(task: dict) -> str:
+    """Return a readable due-date string for a task, or empty string."""
+    due = task.get("dueDate")
+    if not due:
+        return ""
+    try:
+        dt_str = due[:10]  # "2026-05-30T12:00:00+0000" -> "2026-05-30"
+        return f" [Due: {dt_str}]"
+    except (IndexError, TypeError):
+        return f" [Due: {due}]"
+
+
 # -- MCP Tools -------------------------------------------------------------
 
 
@@ -240,10 +255,14 @@ async def list_tasks(project_id: str) -> str:
             prio_str = prio_map.get(priority, "")
             title = t.get("title", "Untitled")
             task_id = t.get("id", "?")
+            due_str = _fmt_due(t)
             tags_str = (
                 f" [{', '.join(t.get('tags', []))}]" if t.get("tags") else ""
             )
-            lines.append(f"  {status} {prio_str} {title}{tags_str} ({task_id[:8]}...)")
+            lines.append(
+                f"  {status} {prio_str} {title}{due_str}{tags_str}"
+                f" ({task_id[:8]}...)"
+            )
         return "\n".join(lines)
     except Exception as e:
         return f"Error listing tasks: {e}"
@@ -302,10 +321,11 @@ async def list_tasks_by_column(project_id: str, column_name: str = "") -> str:
             for t in target_tasks:
                 status = "\u2713" if t.get("status") == 1 else "\u25CB"
                 title = t.get("title", "Untitled")
+                due_str = _fmt_due(t)
                 tags_str = (
                     f" [{', '.join(t.get('tags', []))}]" if t.get("tags") else ""
                 )
-                lines.append(f"  {status} {title}{tags_str}")
+                lines.append(f"  {status} {title}{due_str}{tags_str}")
         else:
             sorted_cols = sorted(columns, key=lambda c: c.get("sortOrder", 0))
             for col in sorted_cols:
@@ -316,12 +336,13 @@ async def list_tasks_by_column(project_id: str, column_name: str = "") -> str:
                 for t in col_tasks:
                     status = "\u2713" if t.get("status") == 1 else "\u25CB"
                     title = t.get("title", "Untitled")
+                    due_str = _fmt_due(t)
                     tags_str = (
                         f" [{', '.join(t.get('tags', []))}]"
                         if t.get("tags")
                         else ""
                     )
-                    lines.append(f"  {status} {title}{tags_str}")
+                    lines.append(f"  {status} {title}{due_str}{tags_str}")
             if uncategorized:
                 lines.append(
                     f"\n\u2501 Uncategorized ({len(uncategorized)} tasks)"
@@ -329,7 +350,8 @@ async def list_tasks_by_column(project_id: str, column_name: str = "") -> str:
                 for t in uncategorized:
                     status = "\u2713" if t.get("status") == 1 else "\u25CB"
                     title = t.get("title", "Untitled")
-                    lines.append(f"  {status} {title}")
+                    due_str = _fmt_due(t)
+                    lines.append(f"  {status} {title}{due_str}")
         return "\n".join(lines)
     except Exception as e:
         return f"Error listing tasks by column: {e}"
@@ -532,7 +554,8 @@ async def filter_tasks(project_id: str, status: str = "incomplete") -> str:
         for t in tasks:
             tstatus = "\u2713" if t.get("status") == 1 else "\u25CB"
             title = t.get("title", "Untitled")
-            lines.append(f"  {tstatus} {title} ({t.get('id', '?')[:8]}...)")
+            due_str = _fmt_due(t)
+            lines.append(f"  {tstatus} {title}{due_str} ({t.get('id', '?')[:8]}...)")
         return "\n".join(lines)
     except Exception as e:
         return f"Error filtering tasks: {e}"
